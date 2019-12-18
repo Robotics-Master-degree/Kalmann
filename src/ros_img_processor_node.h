@@ -14,6 +14,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <visualization_msgs/Marker.h>
+#include <geometry_msgs/Vector3.h>
 
 /** \brief Simple Image Processor
  *
@@ -35,15 +36,17 @@ class RosImgProcessorNode
 
         //publishers
         image_transport::Publisher image_pub_;
-		ros::Publisher marker_publisher_;
+        ros::Publisher marker_points_;
+		    ros::Publisher marker_publisher_;
+
 
         //pointer to received (in) and published (out) images
         cv_bridge::CvImagePtr cv_img_ptr_in_;
         cv_bridge::CvImage cv_img_out_;
 
-		//Camera matrix
-		Eigen::Matrix3d matrixK_;
-		Eigen::Vector3d direction_;
+		    //Camera matrix
+		    Eigen::Matrix3d matrixK_;
+	    	Eigen::Vector3d direction_;
 
         //image encoding label
         std::string img_encoding_;
@@ -66,6 +69,9 @@ class RosImgProcessorNode
         // Process input image
         void process();
 
+        // Getting direction values
+        void getMarker();
+
         // Publish output image
         void publishImage();
 
@@ -74,5 +80,6 @@ class RosImgProcessorNode
 
  		// Returns rate_
         double getRate() const;
+
 };
 #endif

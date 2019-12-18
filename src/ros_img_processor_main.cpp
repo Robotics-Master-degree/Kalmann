@@ -25,7 +25,8 @@ int main(int argc, char **argv)
 
             //publish things
             imgp.publishImage();
-			imgp.publishMarker(); 
+			      imgp.publishMarker();
+            imgp.getMarker();
 
             //relax to fit output rate
             loopRate.sleep();
