@@ -116,7 +116,7 @@ void RosImgProcessorNode::getMarker()
   vector.x = direction_[0];
   vector.y = direction_[1];
   vector.z = direction_[2];
-  std::cout << "x" << vector.x << "y"  << vector.y << "z" << vector.z;
+  //std::cout << "x" << vector.x << "y"  << vector.y << "z" << vector.z;
   marker_points_.publish(vector);
 
 }
