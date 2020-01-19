@@ -33,11 +33,14 @@ class RosImgProcessorNode
         // subscribers to the image and camera info topics
         image_transport::Subscriber image_subs_;
         ros::Subscriber camera_info_subs_;
+        ros::Subscriber Kalmann_Filter_;
 
         //publishers
         image_transport::Publisher image_pub_;
         ros::Publisher marker_points_;
 		    ros::Publisher marker_publisher_;
+        //publishing state space
+        ros::Publisher state_space_;
 
 
         //pointer to received (in) and published (out) images
@@ -47,6 +50,21 @@ class RosImgProcessorNode
 		    //Camera matrix
 		    Eigen::Matrix3d matrixK_;
 	    	Eigen::Vector3d direction_;
+        Eigen::Vector3d center_3d_;
+
+        //Output image
+
+        cv::Point center_kallman_;//kallman
+
+        cv::Mat output_image_;
+
+        //Center
+        cv::Point center_;//
+
+
+        //radius
+        int radius_;
+        Eigen::Vector3d X_;
 
         //image encoding label
         std::string img_encoding_;
@@ -58,6 +76,7 @@ class RosImgProcessorNode
         // callbacks
         void imageCallback(const sensor_msgs::ImageConstPtr& _msg);
         void cameraInfoCallback(const sensor_msgs::CameraInfo & _msg);
+        void KalmanFilterCallback(const geometry_msgs::Vector3& _msg);
 
     public:
         // Constructor
@@ -71,6 +90,9 @@ class RosImgProcessorNode
 
         // Getting direction values
         void getMarker();
+
+        //Getting state state_space
+        void stateSpace();
 
         // Publish output image
         void publishImage();

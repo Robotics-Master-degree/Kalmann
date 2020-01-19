@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/julia/catkin_ws/src/ros_img_processor/build/devel/setup.sh

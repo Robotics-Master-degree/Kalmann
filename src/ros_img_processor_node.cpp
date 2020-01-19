@@ -11,10 +11,12 @@ RosImgProcessorNode::RosImgProcessorNode() :
 	image_pub_ = img_tp_.advertise("image_out", 100);
 	marker_publisher_ = nh_.advertise<visualization_msgs::Marker>( "arrow_marker", 1 );
   marker_points_ = nh_.advertise<geometry_msgs::Vector3>( "direction", 1 );
+  state_space_ =nh_.advertise<geometry_msgs::Vector3>("state_space", 1);
 
 	//sets subscribers
 	image_subs_ = img_tp_.subscribe("image_in", 1, &RosImgProcessorNode::imageCallback, this);
 	camera_info_subs_ = nh_.subscribe("camera_info_in", 100, &RosImgProcessorNode::cameraInfoCallback, this);
+   Kalmann_Filter_ = nh_.subscribe("/tracker_node/Kalmann_Filter", 100, &RosImgProcessorNode::KalmanFilterCallback, this);
 }
 
 RosImgProcessorNode::~RosImgProcessorNode()
@@ -31,6 +33,7 @@ void RosImgProcessorNode::process()
     {
         // copy the input image to the out one
         cv_img_out_.image = cv_img_ptr_in_->image;
+        output_image_ = cv_img_out_.image;
 
 		// find the ball
     const int GAUSSIAN_BLUR_SIZE = 7;
@@ -39,7 +42,7 @@ void RosImgProcessorNode::process()
     const double HOUGH_ACCUM_RESOLUTION = 2;
     const double MIN_CIRCLE_DIST = 40;
     const double HOUGH_ACCUM_TH = 70;
-    const int MIN_RADIUS = 5; //esta en pixels
+    const int MIN_RADIUS = 50;//5; //esta en pixels
     const int MAX_RADIUS = 80;
 
 
@@ -67,28 +70,45 @@ void RosImgProcessorNode::process()
           //computing multiple circles
             if ( circles[ii][0] != -1 )
             {
-                    //computing center
-                    center = cv::Point(cvRound(circles[ii][0]), cvRound(circles[ii][1]));
-                    //computing radius
-                    radius = cvRound(circles[ii][2]);
-                    //plotting circle
-                    cv::circle(cv_img_out_.image, center, radius, cv::Scalar(255,0,0), 3, 8, 0 );// circle perimeter in red
-                    //Computing 3d point center
-                    Eigen::Vector3d center_3d(cvRound(circles[ii][0]), cvRound(circles[ii][1]),0);
-                    // draw a bounding box around the ball
-                    box.x = cvRound(circles[ii][0] - radius);
-                    box.y = cvRound(circles[ii][1] - radius);
-                    box.width = radius*2;
-                    box.height = radius*2;
-                    cv::rectangle(cv_img_out_.image, box, cv::Scalar(0,255,255), 3);
-                    //computing direction of the center of the circle, reference to the camera.
-                    direction_ << (matrixK_.inverse())*center_3d;
-                    //plotting line
-                    cv::line(cv_img_out_.image, center, cv::Point (0,0), (0,255,0), 2);
-                    //std::cout << "direction:" << direction_;
+              //computing center
+                 center = cv::Point(cvRound(circles[ii][0]), cvRound(circles[ii][1]));
+                 center_=center;
+                 //computing radius
+                 radius = cvRound(circles[ii][2]);
+                 radius_ = radius;
+                 //plotting circle
+                 cv::circle(cv_img_out_.image, center, radius, cv::Scalar(255,0,0), 3, 8, 0 );// circle perimeter in red
+                 //Computing 3d point center
+                 Eigen::Vector3d center_3d(cvRound(circles[ii][0]), cvRound(circles[ii][1]),0);
+                 // draw a bounding box around the ball
+                 box.x = cvRound(circles[ii][0] - radius);
+                 box.y = cvRound(circles[ii][1] - radius);
+                 box.width = radius*2;
+                 box.height = radius*2;
+                 cv::rectangle(cv_img_out_.image, box, cv::Scalar(0,255,255), 3);
+                 //computing direction of the center of the circle, reference to the camera.
+                 direction_ << (matrixK_.inverse())*center_3d;
+                 //plotting line
+                 cv::line(cv_img_out_.image, center, cv::Point (0,0), (0,255,0), 2);
+                 //std::cout << "direction:" << direction_;
+                 //std::cout << "Center" << center_3d;
+                 stateSpace();
+
+                    //std::cout << "direction:" << direction;
                     //std::cout << "Center" << center_3d;
             }
+            output_image_ =cv_img_out_.image;
+
+
+
         }
+        cv::circle(cv_img_out_.image, center_kallman_, radius_, cv::Scalar(0,255,0), 3, 8, 0 );// circle perimeter in red
+        /*cv::rectangle(cv_img_out_.image, box, cv::Scalar(0,255,255), 3);
+        //computing direction of the center of the circle, reference to the camera.
+        direction_ << (matrixK_.inverse())*center_3d_;
+        stateSpace();
+        //plotting line
+        //cv::line(cv_img_out_.image, center, cv::Point (0,0), (0,255,0), 2);*/
 
 		}
 
@@ -120,6 +140,18 @@ void RosImgProcessorNode::getMarker()
   marker_points_.publish(vector);
 
 }
+
+void RosImgProcessorNode::stateSpace(){
+
+  geometry_msgs::Vector3 vector;
+  vector.x = center_.x;
+  vector.y = center_.y;
+  vector.z = radius_;
+  state_space_.publish(vector);
+
+
+}
+
 
 void RosImgProcessorNode::publishMarker()
 {
@@ -199,8 +231,16 @@ void RosImgProcessorNode::imageCallback(const sensor_msgs::ImageConstPtr& _msg)
         return;
     }
 }
+void RosImgProcessorNode::KalmanFilterCallback(const geometry_msgs::Vector3& _msg)
+{
+  //cv::Point center;
+  center_kallman_= cv::Point(cvRound(_msg.x),cvRound(_msg.y));
 
-void RosImgProcessorNode::cameraInfoCallback(const sensor_msgs::CameraInfo & _msg)
+  //cv::circle(output_image_,center__ , _msg.z, cv::Scalar(255,0,0), 3, 8, 0 );// circle perimeter in red
+}
+
+
+void RosImgProcessorNode::cameraInfoCallback(const sensor_msgs::CameraInfo& _msg)
 {
 	matrixK_  << _msg.K[0],_msg.K[1],_msg.K[2],
                  _msg.K[3],_msg.K[4],_msg.K[5],

@@ -5,7 +5,7 @@ project(ros_img_processor)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 ## Find catkin macros and libraries
-find_package( catkin REQUIRED COMPONENTS 
+find_package( catkin REQUIRED COMPONENTS
       roscpp
       rospy
       image_transport
@@ -15,16 +15,21 @@ find_package( catkin REQUIRED COMPONENTS
 find_package(OpenCV REQUIRED)
 
 #source files
-SET(SRCS 
+SET(SRCS
       src/ros_img_processor_node.cpp
       src/ros_img_processor_main.cpp)
 
+SET(TR
+      src/tracker_node.cpp
+      src/tracker_main.cpp)
+
+
 ## The catkin_package macro generates cmake config files for your package
 catkin_package(
-      CATKIN_DEPENDS 
-            roscpp 
-            rospy 
-            image_transport 
+      CATKIN_DEPENDS
+            roscpp
+            rospy
+            image_transport
             cv_bridge)
 
 ## Specify additional locations of header files
@@ -32,8 +37,13 @@ include_directories(${OpenCV_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
 ## Declare a cpp executable for pipol_tracker_node
 add_executable(ros_img_processor ${SRCS})
-#add_dependencies(pipol_tracker_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(ros_img_processor ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+add_executable(tracker_node ${TR})
+target_link_libraries(tracker_node ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+#add_dependencies(pipol_tracker_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+
 
 #install binaries
 install(TARGETS ros_img_processor

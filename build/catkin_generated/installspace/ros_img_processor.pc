@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: ros_img_processor
+Description: Description of ros_img_processor
+Version: 0.0.0
+Cflags: 
+Libs: -L/usr/local/lib 
+Requires: roscpp rospy image_transport cv_bridge

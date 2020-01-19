@@ -1,0 +1,8 @@
+prefix=/home/julia/catkin_ws/src/ros_img_processor/build/devel
+
+Name: ros_img_processor
+Description: Description of ros_img_processor
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/julia/catkin_ws/src/ros_img_processor/build/devel/lib 
+Requires: roscpp rospy image_transport cv_bridge
