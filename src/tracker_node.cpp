@@ -55,8 +55,9 @@ TrackerNode::~TrackerNode()
 void TrackerNode::StateSpaceCallback(const geometry_msgs::Vector3& _msg)
 {
 
-  z_t << _msg.x, _msg.y;
+  x_t_ << _msg.x, _msg.y,0,0;
   radius = _msg.z;
+  prediction();
   correction();
 
 
