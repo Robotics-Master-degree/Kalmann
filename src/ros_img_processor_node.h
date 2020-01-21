@@ -15,7 +15,7 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Vector3.h>
-
+#include <geometry_msgs/Vector3Stamped.h>
 /** \brief Simple Image Processor
  *
  * Simple Image Processor with opencv calls
@@ -40,7 +40,7 @@ class RosImgProcessorNode
         ros::Publisher marker_points_;
 		    ros::Publisher marker_publisher_;
         //publishing state space
-        ros::Publisher state_space_;
+        ros::Publisher raw_data_;
 
 
         //pointer to received (in) and published (out) images
@@ -61,7 +61,6 @@ class RosImgProcessorNode
         //Center
         cv::Point center_;//
 
-
         //radius
         int radius_;
         Eigen::Vector3d X_;
@@ -71,6 +70,9 @@ class RosImgProcessorNode
 
         //wished process rate, [hz]
         double rate_;
+
+        //time
+        ros::Time time_raw_data_;
 
     protected:
         // callbacks

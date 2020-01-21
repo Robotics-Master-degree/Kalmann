@@ -11,12 +11,13 @@ RosImgProcessorNode::RosImgProcessorNode() :
 	image_pub_ = img_tp_.advertise("image_out", 100);
 	marker_publisher_ = nh_.advertise<visualization_msgs::Marker>( "arrow_marker", 1 );
   marker_points_ = nh_.advertise<geometry_msgs::Vector3>( "direction", 1 );
-  state_space_ =nh_.advertise<geometry_msgs::Vector3>("state_space", 1);
+  raw_data_ =nh_.advertise<geometry_msgs::Vector3Stamped>("raw_data", 1);
 
 	//sets subscribers
 	image_subs_ = img_tp_.subscribe("image_in", 1, &RosImgProcessorNode::imageCallback, this);
 	camera_info_subs_ = nh_.subscribe("camera_info_in", 100, &RosImgProcessorNode::cameraInfoCallback, this);
-   Kalmann_Filter_ = nh_.subscribe("/tracker_node/Kalmann_Filter", 100, &RosImgProcessorNode::KalmanFilterCallback, this);
+  Kalmann_Filter_ = nh_.subscribe("/tracker_node/Kalmann_Filter", 100, &RosImgProcessorNode::KalmanFilterCallback, this);
+
 }
 
 RosImgProcessorNode::~RosImgProcessorNode()
@@ -142,13 +143,14 @@ void RosImgProcessorNode::getMarker()
 }
 
 void RosImgProcessorNode::stateSpace(){
-
-  geometry_msgs::Vector3 vector;
-  vector.x = center_.x;
-  vector.y = center_.y;
-  vector.z = radius_;
-  state_space_.publish(vector);
-
+  time_raw_data_=  ros::Time::now();
+  geometry_msgs::Vector3Stamped vector;
+  vector.header.stamp = time_raw_data_;
+  vector.vector.x = center_.x;
+  vector.vector.y = center_.y;
+  vector.vector.z = radius_;
+  raw_data_.publish(vector);
+  std::cout <<"time"<< time_raw_data_;
 
 }
 
@@ -235,7 +237,7 @@ void RosImgProcessorNode::KalmanFilterCallback(const geometry_msgs::Vector3& _ms
 {
   //cv::Point center;
   center_kallman_= cv::Point(cvRound(_msg.x),cvRound(_msg.y));
-
+  std::cout << "kallman" << std::endl;
   //cv::circle(output_image_,center__ , _msg.z, cv::Scalar(255,0,0), 3, 8, 0 );// circle perimeter in red
 }
 

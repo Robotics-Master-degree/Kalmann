@@ -16,6 +16,8 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Vector3.h>
+#include <geometry_msgs/Vector3Stamped.h>
+#include <ctime>
 
 class TrackerNode
 {
@@ -23,10 +25,10 @@ class TrackerNode
         //ros node handle
         ros::NodeHandle nh_;
         //initializing subscribers
-        ros::Subscriber state_space_topic_;
+        ros::Subscriber raw_data_;
         //Parameters needed to calculate the Kalmann Filter
         //INPUTS:
-        //Eigen::Matrix<float,4,1> x_0_; //x_0
+
         Eigen::Matrix<float,4,1> x_0_;
         Eigen::Matrix<float,4,4> C_0_x_; //x_0
         Eigen::Matrix<float,4,4> F_t_; //x_0
@@ -47,7 +49,7 @@ class TrackerNode
 
         //PREDICTION //OUTPUT:
 
-        //Eigen::Matrix<float,4,1> g_t_;
+        ros::Time time_system;
 
 
 
@@ -60,12 +62,6 @@ class TrackerNode
         Eigen::Matrix <float,4,4> C_x_t;
 
 
-        //Eigen::Vector2d meas_space_; //measurement_space
-        //Eigen::Matrix<int,5,5> F_;
-        //Eigen::Matrix<int,3,4> H_;
-        //Eigen::Matrix<int,1,1> G_;
-        //Eigen::Matrix<int,2,2> Cn_z_;
-        //Eigen::Matrix<int,5,5> Cn_x_;
 
 
 
@@ -82,15 +78,20 @@ class TrackerNode
         // Returns rate_
         double getRate() const;
 
-        void prediction();
-        void correction();
+        void prediction(const ros::Time &__ts);
+        void correction(const geometry_msgs::Vector3& __detection);
         Eigen::Matrix<float,4,1> x_t_;
         float radius;
         ros::Publisher Kalmann_Filter_;
+        ros::Time last_prediction_ts; //la ultima predicció
+        bool new_detection;
+        void publish();
+        //geometry_msgs::Vector3 __detection;
 
    protected:
         // callbacks
-        void StateSpaceCallback(const geometry_msgs::Vector3& _msg);
+        void StateSpaceCallback(const geometry_msgs::Vector3Stamped& _msg);//
+        void KalmanFilterCallback(const geometry_msgs::Vector3& _msg);
 
 
 };

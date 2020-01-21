@@ -6,17 +6,19 @@ TrackerNode::TrackerNode():
   //img_tp_(nh_)
 {
   //loop rate [hz], Could be set from a yaml file
+  new_detection = false;
+  //last_prediction_ts
   rate_=10;
   At_ =1;
-  x_0_ << 10.0,10.0,0.0,0.0;
+  x_0_ << 10.0,10.0,1.0,1.0;
   C_0_x_ << 1, 0, 0, 0,
            0, 1, 0, 0,
            0, 0, 100, 0,
            0, 0, 0, 100;
-  F_t_ << 1,0,At_,0,
+  /*F_t_ << 1,0,At_,0,
           0,1,0,At_,
           0,0,1,0,
-          0,0,0,1;
+          0,0,0,1;*/
   u_t_ << 1,1,1,1;
   G_t_ << 0,0,0,0,
           0,0,0,0,
@@ -34,6 +36,8 @@ TrackerNode::TrackerNode():
   //z_t=;
   C_x_t_ = C_0_x_;
 
+  //std::cout << "new_detection" << new_detection;
+
 
 
   //std::cout << x_0_ << '\n';
@@ -41,8 +45,9 @@ TrackerNode::TrackerNode():
   x_0_.y=0;
   x_0_.z=0;
   x_0_.w=0;*/
-  state_space_topic_ = nh_.subscribe("/ros_img_processor/state_space", 1, &TrackerNode::StateSpaceCallback, this);
+  raw_data_= nh_.subscribe("/ros_img_processor/raw_data", 1, &TrackerNode::StateSpaceCallback, this);
   Kalmann_Filter_ =nh_.advertise<geometry_msgs::Vector3>("Kalmann_Filter", 1);
+  // Kalmann_Filter_ = nh_.subscribe("/tracker_node/Kalmann_Filter", 100, &RosImgProcessorNode::KalmanFilterCallback, this);
 
 }
 
@@ -52,32 +57,66 @@ TrackerNode::~TrackerNode()
 }
 
 
-void TrackerNode::StateSpaceCallback(const geometry_msgs::Vector3& _msg)
+/*void TrackerNode::StateSpaceCallback(const geometry_msgs::Vector3Stamped& _msg)
 {
+//const geometry_msgs::Vector3& _msg
+      //prediction(_msg.time);
 
-  x_t_ << _msg.x, _msg.y,0,0;
-  radius = _msg.z;
-  prediction();
-  correction();
+      //correction(_msg);
+
+      //new_detection=true;
+
+      //x_t_ << _msg.x, _msg.y,0,0;
+      //radius = _msg.z;
+  //prediction(const ros::Time &__ts);
+  //correction();
+
+
+}*/
+
+void TrackerNode::StateSpaceCallback(const geometry_msgs::Vector3Stamped& _msg){
+      prediction(_msg.header.stamp);
+      correction(_msg.vector);
+      new_detection = true;
 
 
 }
 
-void TrackerNode::prediction(){
+void TrackerNode::prediction(const ros::Time &__ts){
 
-   //Compute them if they are not constantˆxt=Ftxt−1+Gtut//Prior state estimateCtx=FtCt−1x(Ft)T+Ctnx//Prior state covariance
-  //std::cout << "F_t" << F_t_ << "Finished" << std::endl;
-  //std::cout << "x_t_"<< x_t_ << std::endl;
+  /*  un mètode que sigui prediction(const time & __ts), i que és capaç de
+  fer una predicció des de last_prediction_ts fins al __ts que li entra
+  com argument. A més, aquest mètode actualitza el last_prediction_ts amb
+  __ts. Aquí */
 
-  //Eigen::Matrix<float,4,1> hola = F_t_*x_t_;// + G_t_ * u_t_;
-  x_t_ = F_t_*x_t_ + G_t_*u_t_;
-  C_x_t_ = F_t_ * C_x_t_ * F_t_.transpose() + C_n_x_t_; //ojo amb la C_x_t_
-  //std::cout << "C_x_t_"<< C_x_t_ << std::endl;
-  //std::cout << "F_t_"<< F_t_ << std::endl;
+
+    At_ = (__ts.nsec - last_prediction_ts.nsec)/1000000000;
+    std::cout << "ts"<< At_ << std::endl;
+    F_t_ << 1,0,At_,0,
+            0,1,0,At_,
+            0,0,1,0,
+            0,0,0,1;
+    x_t_ = F_t_*x_t_ + G_t_*u_t_;
+    C_x_t_ = F_t_ * C_x_t_ * F_t_.transpose() + C_n_x_t_; //ojo amb la C_x_t_
+    last_prediction_ts = __ts;
+    std::cout << "F_t_" << F_t_ << std::endl;
+    std::cout << "x_t_" << x_t_ << std::endl;
+    //std::cout << "lpt"<< last_prediction_ts  << std::endl;
 }
 
-void TrackerNode::correction(){
-//ORRECTIONHt//Compute it if it is not constantˆzt=Htˆxt//Compute the expected measurementKt=Ctx(Ht)T(HtCtx(Ht)T+Ctnz)−1//Compute the gainˆxt=ˆxt+Kt(zt−ˆzt)//Posterior state estimateCtx= (I−KtHt)Ctx(I−KtHt)T+KtCtnz(Kt)T//Update the covariance of the state estimate
+void TrackerNode::publish(){
+  geometry_msgs::Vector3 vector;
+  vector.x = x_t_[0];
+  vector.y = x_t_[1];
+  //vector.z = radius_;
+  Kalmann_Filter_.publish(vector);
+  std::cout << "vector" << vector.x << "" << vector.y;
+}
+
+void TrackerNode::correction(const geometry_msgs::Vector3& __detection){
+//un mètode de correction(const detectionType & __detection) que li entra una detecció.
+  z_t << __detection.x, __detection.y;
+
   z_t_= H_t_*x_t_;
   Eigen::Matrix <float,2,2> part;
   part= (H_t_*C_x_t_*H_t_.transpose()) + C_n_z_t_;
@@ -93,11 +132,11 @@ void TrackerNode::correction(){
           0,0,1,0,
           0,0,0,1;
   C_x_t = (I_4-K_t_*H_t_)*C_x_t_*(I_4-K_t_*H_t_) + K_t_*C_n_z_t_*K_t_.transpose();
-  //cv::Point center = cv::Point(cvRound(x_t[0][0]), cvRound(x[0][1]);
-  //cv::circle(cv_img_out_.image, center, radius, cv::Scalar(0,255,0), 3, 8, 0 );// circle perimeter in red
 
-  //std::cout << "x_t_" << x_t << std::endl;
-
+  std::cout << "x_t_2" << x_t_ << std::endl;
+  std::cout << "z_t_" << z_t_ << std::endl;
+  new_detection = false;
+  TrackerNode::publish();
 
 }
 
