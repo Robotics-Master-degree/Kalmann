@@ -90,7 +90,7 @@ void RosImgProcessorNode::process()
                  //computing direction of the center of the circle, reference to the camera.
                  direction_ << (matrixK_.inverse())*center_3d;
                  //plotting line
-                 cv::line(cv_img_out_.image, center, cv::Point (0,0), (0,255,0), 2);
+                 //cv::line(cv_img_out_.image, center, cv::Point (0,0), (0,255,0), 2);
                  //std::cout << "direction:" << direction_;
                  //std::cout << "Center" << center_3d;
 
@@ -98,6 +98,8 @@ void RosImgProcessorNode::process()
                     //std::cout << "direction:" << direction;
                     //std::cout << "Center" << center_3d;
             }
+            //cv::circle(cv_img_out_.image, center, radius, cv::Scalar(255,0,0), 3, 8, 0 );// circle perimeter in red
+            //cv::rectangle(cv_img_out_.image, box, cv::Scalar(0,255,255), 3);
             output_image_ =cv_img_out_.image;
             stateSpace();
 

@@ -10,11 +10,11 @@ TrackerNode::TrackerNode():
   //last_prediction_ts
   rate_=10;
   At_ =0.1;
-  x_0_ << 0.1,0.1,0.1,0.1;
+  x_0_ << 0.1,0.1,0.2,0.2;
   C_0_x_ << 1, 0, 0, 0,
            0, 1, 0, 0,
-           0, 0, 100, 0,
-           0, 0, 0, 100;
+           0, 0, 50, 0,
+           0, 0, 0, 50;
   F_t_ << 1,0,0.1,0,
           0,1,0,0.1,
           0,0,1,0,
@@ -149,7 +149,7 @@ void TrackerNode::correction(const geometry_msgs::Vector3& __detection){
           0,0,0,1;
   C_x_t = (I_4-K_t_*H_t_)*C_x_t_*(I_4-K_t_*H_t_) + K_t_*C_n_z_t_*K_t_.transpose();
 
-  //std::cout << "x_t_2" << x_t_ << std::endl;
+  std::cout << "x_t_corr: " << x_t_ << std::endl;
   //std::cout << "z_t_" << z_t_ << std::endl;
 
   this->new_detection = false;

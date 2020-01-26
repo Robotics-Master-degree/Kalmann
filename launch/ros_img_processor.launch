@@ -47,11 +47,11 @@
 		<remap from="/ros_img_processor/camera_info_in" to="/usb_cam/camera_info"/>
 	</node>
 
-	<!--node name="tracker_node"
+	<node name="tracker_node"
 		pkg="ros_img_processor"
-		type="ros_img_processor"
+		type="tracker_node"
 		output="screen">
-	</node-->
+	</node>
 
 	<!-- display in/out image -->
 	<group if="$(arg show_image)">
