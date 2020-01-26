@@ -9,16 +9,16 @@ TrackerNode::TrackerNode():
   new_detection = false;
   //last_prediction_ts
   rate_=10;
-  At_ =1;
-  x_0_ << 10.0,10.0,1.0,1.0;
+  At_ =0.1;
+  x_0_ << 0.1,0.1,0.1,0.1;
   C_0_x_ << 1, 0, 0, 0,
            0, 1, 0, 0,
            0, 0, 100, 0,
            0, 0, 0, 100;
-  /*F_t_ << 1,0,At_,0,
-          0,1,0,At_,
+  F_t_ << 1,0,0.1,0,
+          0,1,0,0.1,
           0,0,1,0,
-          0,0,0,1;*/
+          0,0,0,1;
   u_t_ << 1,1,1,1;
   G_t_ << 0,0,0,0,
           0,0,0,0,
@@ -35,6 +35,7 @@ TrackerNode::TrackerNode():
   x_t_=x_0_;
   //z_t=;
   C_x_t_ = C_0_x_;
+  new_detection = true;
 
   //std::cout << "new_detection" << new_detection;
 
@@ -75,9 +76,11 @@ TrackerNode::~TrackerNode()
 }*/
 
 void TrackerNode::StateSpaceCallback(const geometry_msgs::Vector3Stamped& _msg){
+      new_detection = true;
+      //last_prediction_ts =_msg.header.stamp;
       prediction(_msg.header.stamp);
       correction(_msg.vector);
-      new_detection = true;
+
 
 
 }
@@ -88,19 +91,30 @@ void TrackerNode::prediction(const ros::Time &__ts){
   fer una predicció des de last_prediction_ts fins al __ts que li entra
   com argument. A més, aquest mètode actualitza el last_prediction_ts amb
   __ts. Aquí */
+    if (last_prediction_ts.toSec() == 0){
+      std::cout << "First prediction" << std::endl;
+    }
+    else{
+      At_ = (__ts - last_prediction_ts).toSec();///1000000000;
+    }
 
 
-    At_ = (__ts.nsec - last_prediction_ts.nsec)/1000000000;
-    std::cout << "ts"<< At_ << std::endl;
+    //std::cout << "prediction" << std::endl;
+    //std::cout << "__ts: "  << __ts.toSec() <<std::endl;
+    //std::cout << "last_prediction_ts_ " << last_prediction_ts.toSec() << std::endl;
+    //std::cout << "At_: "<< At_ << std::endl;
     F_t_ << 1,0,At_,0,
             0,1,0,At_,
             0,0,1,0,
             0,0,0,1;
+    //std::cout << "x_t_" << x_t_ << std::endl;
     x_t_ = F_t_*x_t_ + G_t_*u_t_;
     C_x_t_ = F_t_ * C_x_t_ * F_t_.transpose() + C_n_x_t_; //ojo amb la C_x_t_
+
     last_prediction_ts = __ts;
     std::cout << "F_t_" << F_t_ << std::endl;
-    std::cout << "x_t_" << x_t_ << std::endl;
+    std::cout << "x_t_: " << x_t_ << std::endl;
+    //std::cout << "At_" << At_ << std::endl;
     //std::cout << "lpt"<< last_prediction_ts  << std::endl;
 }
 
@@ -110,11 +124,13 @@ void TrackerNode::publish(){
   vector.y = x_t_[1];
   //vector.z = radius_;
   Kalmann_Filter_.publish(vector);
-  std::cout << "vector" << vector.x << "" << vector.y;
+  //std::cout << "vector" << vector.x << "" << vector.y;
 }
 
 void TrackerNode::correction(const geometry_msgs::Vector3& __detection){
 //un mètode de correction(const detectionType & __detection) que li entra una detecció.
+
+  std::cout << "correction" << std::endl;
   z_t << __detection.x, __detection.y;
 
   z_t_= H_t_*x_t_;
@@ -133,9 +149,10 @@ void TrackerNode::correction(const geometry_msgs::Vector3& __detection){
           0,0,0,1;
   C_x_t = (I_4-K_t_*H_t_)*C_x_t_*(I_4-K_t_*H_t_) + K_t_*C_n_z_t_*K_t_.transpose();
 
-  std::cout << "x_t_2" << x_t_ << std::endl;
-  std::cout << "z_t_" << z_t_ << std::endl;
-  new_detection = false;
+  //std::cout << "x_t_2" << x_t_ << std::endl;
+  //std::cout << "z_t_" << z_t_ << std::endl;
+
+  this->new_detection = false;
   TrackerNode::publish();
 
 }

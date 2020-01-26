@@ -29,13 +29,14 @@ int main(int argc, char **argv)
         ros::spinOnce();
         if (!tracker.new_detection)
         {
-          std::cout << "Entered";
+          std::cout << "Entered" << std::endl;
           tracker.prediction(ros::Time::now());
           tracker.publish();
           tracker.new_detection=false;
         }
         //prediction()
-
+        //tracker.new_detection=false;
+        std::cout << "new_detection: " << tracker.new_detection << std::endl;
         loopRate.sleep();
   }
 

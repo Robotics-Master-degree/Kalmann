@@ -93,13 +93,13 @@ void RosImgProcessorNode::process()
                  cv::line(cv_img_out_.image, center, cv::Point (0,0), (0,255,0), 2);
                  //std::cout << "direction:" << direction_;
                  //std::cout << "Center" << center_3d;
-                 stateSpace();
+
 
                     //std::cout << "direction:" << direction;
                     //std::cout << "Center" << center_3d;
             }
             output_image_ =cv_img_out_.image;
-
+            stateSpace();
 
 
         }
@@ -150,7 +150,7 @@ void RosImgProcessorNode::stateSpace(){
   vector.vector.y = center_.y;
   vector.vector.z = radius_;
   raw_data_.publish(vector);
-  std::cout <<"time"<< time_raw_data_;
+  std::cout <<"time: "<< time_raw_data_ << std::endl;
 
 }
 
@@ -237,7 +237,7 @@ void RosImgProcessorNode::KalmanFilterCallback(const geometry_msgs::Vector3& _ms
 {
   //cv::Point center;
   center_kallman_= cv::Point(cvRound(_msg.x),cvRound(_msg.y));
-  std::cout << "kallman" << std::endl;
+  //std::cout << "kallman" << std::endl;
   //cv::circle(output_image_,center__ , _msg.z, cv::Scalar(255,0,0), 3, 8, 0 );// circle perimeter in red
 }
 
@@ -247,5 +247,5 @@ void RosImgProcessorNode::cameraInfoCallback(const sensor_msgs::CameraInfo& _msg
 	matrixK_  << _msg.K[0],_msg.K[1],_msg.K[2],
                  _msg.K[3],_msg.K[4],_msg.K[5],
                  _msg.K[6],_msg.K[7],_msg.K[8];
-	std::cout << "matrixK: " << std::endl << matrixK_ << std::endl;
+	//std::cout << "matrixK: " << std::endl << matrixK_ << std::endl;
 }
